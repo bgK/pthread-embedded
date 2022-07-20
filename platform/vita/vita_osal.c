@@ -236,15 +236,18 @@ pte_osResult pte_osThreadWaitForEnd(pte_osThreadHandle threadHandle)
 {
 	int status = 0;
 	pspThreadData *pThreadData = *(pspThreadData **)vitasdk_get_pthread_data(0);
-	SceUID evid = pThreadData->evid;
 	while (1)
 	{
-		unsigned int bits = 0;
-		sceKernelPollEventFlag(evid, PTHREAD_EVID_CANCEL, SCE_EVENT_WAITAND, &bits);
-
-		if (bits & PTHREAD_EVID_CANCEL)
+		// The current thread does not have to be a pthread thread
+		if (pThreadData)
 		{
-			return PTE_OS_INTERRUPTED;
+			unsigned int bits = 0;
+			sceKernelPollEventFlag(pThreadData->evid, PTHREAD_EVID_CANCEL, SCE_EVENT_WAITAND, &bits);
+
+			if (bits & PTHREAD_EVID_CANCEL)
+			{
+				return PTE_OS_INTERRUPTED;
+			}
 		}
 
 		SceUInt timeout = POLLING_DELAY_IN_us;
